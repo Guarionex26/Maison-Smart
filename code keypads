@@ -1,0 +1,98 @@
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+
+// === Clavier analogique ===
+const int buttonPin = A0;     //pin pour le boutton
+
+const int keyThresholds[12] = {
+  50, 150, 250,
+  350, 450, 550,
+  650, 750, 850,
+  950, 1023, 1024
+};
+
+const char keyMap[12] = {
+  '1', '2', '3',
+  '4', '5', '6',
+  '7', '8', '9',
+  '*', '0', '#'
+};
+
+char lastKey = '\0';
+
+// === BLE UUIDs ===
+#define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
+#define CHARACTERISTIC_UUID "abcd1234-5678-90ab-cdef-1234567890ab"    
+
+BLECharacteristic *pCharacteristic;
+bool deviceConnected = false;
+
+class MyServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer* pServer) {
+    deviceConnected = true;
+    Serial.println("Client BLE connecté.");
+  }
+
+  void onDisconnect(BLEServer* pServer) {
+    deviceConnected = false;
+    Serial.println("Client BLE déconnecté.");
+  }
+};
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(buttonPin, INPUT);
+
+  // Initialisation BLE
+  BLEDevice::init("Clavier_ESP32");
+  BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(
+                      CHARACTERISTIC_UUID,
+                      BLECharacteristic::PROPERTY_READ |
+                      BLECharacteristic::PROPERTY_NOTIFY
+                    );
+
+  pCharacteristic->addDescriptor(new BLE2902());
+  pCharacteristic->setValue("Ready");
+
+  pService->start();
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->start();
+
+  Serial.println("Clavier BLE prêt !");
+}
+
+void loop() {
+  int analogValue = analogRead(buttonPin);
+
+  for (int i = 0; i < 12; i++) {
+    if (analogValue >= keyThresholds[i] - 20 && analogValue <= keyThresholds[i] + 20) {
+      char key = keyMap[i];
+
+      if (key != lastKey) {
+        Serial.print("Touche pressée : ");
+        Serial.println(key);
+        lastKey = key;
+
+        // Envoi via BLE
+        if (deviceConnected) {
+          char keyStr[2] = { key, '\0' };
+          pCharacteristic->setValue(keyStr);
+          pCharacteristic->notify();
+        }
+      }
+
+      delay(200); // anti-rebond
+      return;
+    }
+  }
+
+  lastKey = '\0';
+}
+
+}
