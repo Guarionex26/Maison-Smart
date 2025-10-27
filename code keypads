@@ -4,7 +4,7 @@
 #include <BLE2902.h>
 
 // === Clavier analogique ===
-const int buttonPin = A0;     //pin pour le boutton
+const int buttonPin = A0;    
 
 const int keyThresholds[12] = {
   50, 150, 250,
