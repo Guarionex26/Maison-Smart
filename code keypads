@@ -23,7 +23,7 @@ const char keyMap[12] = {
 char lastKey = '\0';
 
 // === BLE UUIDs ===
-#define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
+#define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"    //valeur pour un service bluetooth
 #define CHARACTERISTIC_UUID "abcd1234-5678-90ab-cdef-1234567890ab"    
 
 BLECharacteristic *pCharacteristic;
