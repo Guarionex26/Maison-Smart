@@ -32,7 +32,7 @@ void setup() {
     pinMode(WINDOW1_SENSOR_PIN, INPUT_PULLDOWN);
     pinMode(WINDOW2_SENSOR_PIN, INPUT_PULLDOWN);
  
-    pinMode(LED_PIN, OUTPUT); //Mettre Led en OUTPUT
+    pinMode(LED_PIN, OUTPUT); //Mettre LED en OUTPUT
     digitalWrite(LED_PIN, LOW); 
  
     Serial.begin(9600);
