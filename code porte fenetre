@@ -1,0 +1,75 @@
+// BLE UART standard UUIDs (Nordic UART Service)
+const BleUuid serviceUuid("6E400004-B5A3-F393-E0A9-E50E24DCCA9E");
+const BleUuid rxUuid("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+const BleUuid txUuid("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+ 
+// Characteristics: TX for sending, RX for receiving
+BleCharacteristic txCharacteristic("tx", BleCharacteristicProperty::NOTIFY, txUuid, serviceUuid);
+BleCharacteristic rxCharacteristic("rx", BleCharacteristicProperty::WRITE_WO_RSP, rxUuid, serviceUuid, onDataReceived, NULL);
+ 
+// Define sensor pins
+const uint8_t DOOR_SENSOR_PIN = D0;
+const uint8_t WINDOW1_SENSOR_PIN = D1;
+const uint8_t WINDOW2_SENSOR_PIN = D2;
+ 
+const uint8_t LED_PIN = D7;  // Optional LED for feedback
+ 
+// Optional: handle commands from the phone
+void onDataReceived(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context) {
+    if (len > 0) {
+        // Example: turn on LED if '1', off if '0'
+        if (data[0] == '1') {
+            digitalWrite(LED_PIN, HIGH);
+        } else if (data[0] == '0') {
+            digitalWrite(LED_PIN, LOW);
+        }
+    }
+}
+ 
+void setup() {
+    // Set pin modes for sensors
+    pinMode(DOOR_SENSOR_PIN, INPUT_PULLDOWN);
+    pinMode(WINDOW1_SENSOR_PIN, INPUT_PULLDOWN);
+    pinMode(WINDOW2_SENSOR_PIN, INPUT_PULLDOWN);
+ 
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW);
+ 
+    Serial.begin(9600);
+ 
+    // Initialize BLE
+    BLE.on();
+    BLE.addCharacteristic(txCharacteristic);
+    BLE.addCharacteristic(rxCharacteristic);
+ 
+    BleAdvertisingData advData;
+    advData.appendServiceUUID(serviceUuid);
+    advData.appendLocalName("WindowDoor");  // Name shown in BLE app
+ 
+    BLE.advertise(&advData);
+}
+ 
+void loop() {
+    if (BLE.connected()) {
+        // Read sensor values
+        bool doorOpen = digitalRead(DOOR_SENSOR_PIN);
+        bool window1Open = digitalRead(WINDOW1_SENSOR_PIN);
+        bool window2Open = digitalRead(WINDOW2_SENSOR_PIN);
+ 
+        // Create a readable message
+        char statusMessage[64];
+        snprintf(statusMessage, sizeof(statusMessage),
+            "Door: %s\nWindow1: %s\nWindow2: %s\n",
+            doorOpen ? "Open" : "Closed",
+            window1Open ? "Open" : "Closed",
+            window2Open ? "Open" : "Closed");
+ 
+        // Send over BLE
+        txCharacteristic.setValue((uint8_t*)statusMessage, strlen(statusMessage));
+ 
+        // Optional: show in Serial monitor too
+        Serial.println(statusMessage);
+ 
+        delay(1000);  // Update every second
+    }
+}
