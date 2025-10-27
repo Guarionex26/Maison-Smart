@@ -4,7 +4,7 @@
 #include <BLE2902.h>
 
 // === Clavier analogique ===
-const int buttonPin = A0;
+const int buttonPin = A0;     //pin pour le boutton
 
 const int keyThresholds[12] = {
   50, 150, 250,
@@ -24,7 +24,7 @@ char lastKey = '\0';
 
 // === BLE UUIDs ===
 #define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
-#define CHARACTERISTIC_UUID "abcd1234-5678-90ab-cdef-1234567890ab"
+#define CHARACTERISTIC_UUID "abcd1234-5678-90ab-cdef-1234567890ab"    
 
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
